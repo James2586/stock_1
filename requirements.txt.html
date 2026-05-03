@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>@성셈 DC형 퇴직소득세 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3350;
+  --accent:#4f8ef7;--accent2:#7c5fe6;--gold:#f0b429;--success:#34d399;
+  --danger:#f87171;--warn:#fbbf24;--teal:#2dd4bf;--pink:#f472b6;--orange:#fb923c;
+  --text:#e8eaf0;--text2:#9aa3c0;--text3:#5c6585;
+  --r:12px;--font:'Noto Sans KR',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding-bottom:80px}
+
+/* ─── 헤더 ─── */
+.hdr{background:linear-gradient(135deg,#0d1b3e,#1a1d27 50%,#0f1117);border-bottom:1px solid var(--border);padding:28px 20px 24px;text-align:center;position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:400px;height:200px;background:radial-gradient(ellipse,rgba(79,142,247,.18),transparent 70%);pointer-events:none}
+.hbadge{display:inline-flex;align-items:center;gap:6px;background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--accent);margin-bottom:12px}
+.hbadge::before{content:'⚡'}
+.hdr h1{font-size:clamp(20px,5vw,30px);font-weight:700;letter-spacing:-.5px;line-height:1.3}
+.brand{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sub{background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdesc{margin-top:8px;font-size:12px;color:var(--text3)}
+.hline{height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent2),transparent);margin-top:20px;animation:scan 3s ease-in-out infinite}
+@keyframes scan{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ─── 레이아웃 ─── */
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+
+/* ─── 섹션 카드 ─── */
+.sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:20px}
+.stitle{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.stitle::before{content:'';width:3px;height:16px;border-radius:2px;flex-shrink:0}
+.sb  .stitle::before{background:var(--accent)}
+.sg  .stitle::before{background:var(--gold)}
+.st  .stitle::before{background:var(--teal)}
+.sp  .stitle::before{background:var(--pink)}
+.so  .stitle::before{background:var(--orange)}
+.sgr .stitle::before{background:var(--success)}
+.sw  .stitle::before{background:var(--warn)}
+
+/* ─── 입력 ─── */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.req{color:var(--danger);margin-left:3px}
+.hint{font-weight:400;font-size:11px;color:var(--text3);margin-left:6px}
+input[type=text],input[type=date]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 14px;font-size:16px;font-family:var(--font);color:var(--text);min-height:44px;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+input[type=date]{color-scheme:dark}
+input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.12)}
+.drow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:400px){.drow{grid-template-columns:1fr}}
+.abox{margin-top:10px;padding:12px 14px;display:none;background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.22);border-radius:8px;font-size:13px;color:var(--text2);line-height:2}
+.abox .av{color:var(--accent);font-family:var(--mono);font-weight:600}
+.abox .ay{color:var(--gold);font-family:var(--mono);font-weight:700;font-size:16px}
+.ibox{background:rgba(79,142,247,.07);border:1px solid rgba(79,142,247,.2);border-radius:8px;padding:11px 13px;font-size:12px;color:var(--text2);line-height:1.75;margin-top:12px}
+.ibox b{color:var(--accent)}
+
+/* ─── 버튼 ─── */
+.bcalc{width:100%;min-height:52px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:700;font-family:var(--font);cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 20px rgba(79,142,247,.3);transition:all .2s;margin-top:4px;display:block}
+.bcalc:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(79,142,247,.45)}
+.bcalc:active{transform:translateY(0)}
+
+/* ─── 참고표 ─── */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.rtbl{width:100%;border-collapse:collapse;font-size:12px;min-width:260px}
+.rtbl th{background:var(--surface2);padding:8px 10px;text-align:center;font-size:11px;font-weight:600;color:var(--text3);border-bottom:1px solid var(--border)}
+.rtbl td{padding:8px 10px;border-bottom:1px solid rgba(46,51,80,.4);text-align:center;color:var(--text2);font-size:12px}
+.rtbl tr:last-child td{border-bottom:none}
+.rtbl td:first-child{text-align:left}
+.rtbl tr.hlb td{background:rgba(79,142,247,.12);color:var(--accent);font-weight:700}
+.rtbl tr.hlg td{background:rgba(240,180,41,.12);color:var(--gold);font-weight:700}
+.rtbl tr.hlo td{background:rgba(251,146,60,.12);color:var(--orange);font-weight:700}
+
+/* ─── 결과 영역 ─── */
+#results{display:none;margin-top:4px}
+
+/* ─── 요약 카드 ─── */
+.scards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:600px){.scards{grid-template-columns:1fr 1fr}}
+@media(max-width:380px){.scards{grid-template-columns:1fr}}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.scb ::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.scg ::before{background:linear-gradient(90deg,var(--gold),var(--orange))}
+.sct ::before{background:linear-gradient(90deg,var(--teal),var(--success))}
+.scd ::before{background:linear-gradient(90deg,var(--danger),var(--pink))}
+.scp ::before{background:linear-gradient(90deg,var(--pink),var(--accent2))}
+.scw ::before{background:linear-gradient(90deg,var(--warn),var(--orange))}
+.scgr::before{background:linear-gradient(90deg,var(--success),var(--teal))}
+.sco ::before{background:linear-gradient(90deg,var(--orange),var(--warn))}
+.sclbl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.scval{font-family:var(--mono);font-size:16px;font-weight:600;line-height:1.2;word-break:break-all}
+.scb  .scval{color:var(--accent)}  .scg  .scval{color:var(--gold)}
+.sct  .scval{color:var(--teal)}   .scd  .scval{color:var(--danger)}
+.scp  .scval{color:var(--pink)}   .scw  .scval{color:var(--warn)}
+.scgr .scval{color:var(--success)}.sco  .scval{color:var(--orange)}
+.scunit{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* ─── 단계 테이블 ─── */
+.stbl{width:100%;border-collapse:collapse;font-size:13px;min-width:440px}
+.stbl th{background:var(--surface2);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.stbl td{padding:12px 14px;border-bottom:1px solid rgba(46,51,80,.45);vertical-align:middle}
+.stbl tr:hover td{background:rgba(79,142,247,.03)}
+.snum{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.snm{font-weight:600;color:var(--text);font-size:13px}
+.sf{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--mono);line-height:1.65}
+.sv{font-family:var(--mono);font-weight:600;font-size:14px;text-align:right;white-space:nowrap;color:var(--gold)}
+.sv.b{color:var(--accent)}.sv.t{color:var(--teal)}.sv.p{color:var(--pink)}
+.sv.o{color:var(--orange)}.sv.d{color:var(--danger)}.sv.gr{color:var(--success)}.sv.w{color:var(--warn)}
+.rtotal td{background:rgba(248,113,113,.06)!important}
+.rafter td{background:rgba(52,211,153,.06)!important}
+.reff   td{background:rgba(251,146,60,.06)!important}
+.snc{display:flex;align-items:flex-start;gap:10px}
+
+/* ─── 시뮬레이션 ─── */
+.simtbl{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
+.simtbl thead th{background:var(--surface2);padding:11px 12px;text-align:center;font-size:12px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border)}
+.simtbl thead th:first-child{text-align:left;min-width:80px}
+.simtbl td{padding:11px 12px;border-bottom:1px solid rgba(46,51,80,.4);text-align:right;font-family:var(--mono);font-size:13px;color:var(--text2)}
+.simtbl td:first-child{text-align:left;font-family:var(--font);font-weight:600;color:var(--text);font-size:13px}
+.simtbl tbody tr:hover td{background:rgba(79,142,247,.04)}
+.simtbl tbody tr:last-child td{border-bottom:none}
+.simrate{display:block;font-size:10px;font-family:var(--font);color:var(--text3);margin-top:2px}
+.simtbl thead th:nth-child(2){color:var(--teal)}
+.simtbl thead th:nth-child(3){color:var(--success)}
+.simtbl thead th:nth-child(4){color:var(--accent)}
+.simtbl thead th:nth-child(5){color:var(--pink)}
+.simtbl thead th:nth-child(6){color:var(--gold)}
+.simtbl thead th:nth-child(7){color:var(--orange)}
+.simrow-hl td{background:rgba(240,180,41,.09)!important;color:var(--gold)!important;font-weight:700}
+.simrow-hl td:first-child{color:var(--gold)!important}
+.simcol-hl{background:rgba(79,142,247,.07);color:var(--accent)!important}
+.simrow-hl .simcol-hl{background:rgba(240,180,41,.2)!important;color:var(--gold)!important}
+.simrow-hl .simrate,.simcol-hl .simrate{color:inherit!important;opacity:.8}
+
+/* ─── 액션 버튼 4개 ─── */
+.actbar{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.abtn{flex:1;min-width:130px;min-height:50px;padding:13px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;transition:all .2s;font-family:var(--font);border:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1.3}
+.ab1{background:rgba(79,142,247,.15);color:var(--accent);border:1px solid rgba(79,142,247,.3)}
+.ab1:hover{background:rgba(79,142,247,.28)}
+.ab2{background:rgba(52,211,153,.12);color:var(--success);border:1px solid rgba(52,211,153,.3)}
+.ab2:hover{background:rgba(52,211,153,.25)}
+.ab3{background:rgba(240,180,41,.12);color:var(--gold);border:1px solid rgba(240,180,41,.3)}
+.ab3:hover{background:rgba(240,180,41,.25)}
+.ab4{background:linear-gradient(135deg,rgba(124,95,230,.2),rgba(79,142,247,.2));color:#b8a4f8;border:1px solid rgba(124,95,230,.35)}
+.ab4:hover{background:linear-gradient(135deg,rgba(124,95,230,.35),rgba(79,142,247,.35))}
+
+/* ─── 모달 ─── */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px}
+.mov.open{display:flex}
+.mbox{background:var(--surface);border:1px solid var(--border);border-radius:16px;max-width:680px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.mhd{display:flex;justify-content:space-between;align-items:flex-start;padding:22px 22px 16px;border-bottom:1px solid var(--border)}
+.mttl{font-size:15px;font-weight:700}
+.mdt{font-size:11px;color:var(--text3);margin-top:4px}
+.mx{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px}
+.mx:hover{background:var(--surface2);color:var(--text)}
+.mbd{padding:18px 22px;overflow-y:auto;flex:1}
+.mft{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px}
+/* 모달 내 섹션 */
+.esec{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:15px;margin-bottom:12px}
+.esec h4{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text2)}
+.esec p{font-size:13px;color:var(--text);line-height:1.9}
+.bnum{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--gold)}
+.notice{font-size:11px;color:var(--text3);padding:10px 14px;background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:8px;margin-top:8px;line-height:1.7}
+/* 모달 안 시뮬레이션 */
+.msim{overflow-x:auto;margin-top:8px}
+.msimtbl{width:100%;border-collapse:collapse;font-size:11px;min-width:420px}
+.msimtbl th{background:var(--surface2);padding:7px 8px;text-align:center;font-size:10px;font-weight:700;color:var(--text3);border-bottom:1px solid var(--border)}
+.msimtbl th:first-child{text-align:left}
+.msimtbl td{padding:7px 8px;border-bottom:1px solid rgba(46,51,80,.35);text-align:right;font-family:var(--mono);font-size:11px;color:var(--text2)}
+.msimtbl td:first-child{text-align:left;font-family:var(--font);font-size:11px;color:var(--text);font-weight:600}
+.msimtbl tr:last-child td{border-bottom:none}
+.msimtbl tr.mhl td{background:rgba(240,180,41,.1)!important;color:var(--gold)!important;font-weight:700}
+.msimtbl tr.mhl td:first-child{color:var(--gold)!important}
+
+/* ─── 일시금 vs 연금 비교 ─── */
+.vs-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:500px){.vs-wrap{grid-template-columns:1fr}}
+.vs-card{border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;border:1px solid}
+.vs-lump{background:rgba(240,180,41,.07);border-color:rgba(240,180,41,.3)}
+.vs-pension{background:rgba(52,211,153,.07);border-color:rgba(52,211,153,.3)}
+.vs-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;margin-bottom:10px;padding:4px 10px;border-radius:12px}
+.vs-lump .vs-badge{background:rgba(240,180,41,.2);color:var(--gold)}
+.vs-pension .vs-badge{background:rgba(52,211,153,.2);color:var(--success)}
+.vs-amount{font-family:var(--mono);font-size:clamp(18px,3.5vw,26px);font-weight:700;line-height:1.2;margin-bottom:6px}
+.vs-lump .vs-amount{color:var(--gold)}
+.vs-pension .vs-amount{color:var(--success)}
+.vs-sub{font-size:11px;color:var(--text3)}
+.vs-saving{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.vs-saving-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--success),var(--teal));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.vs-saving-text{font-size:14px;font-weight:700;color:var(--success)}
+.vs-saving-pct{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--success)}
+.vs-saving-sub{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.6}
+.vs-note{margin-top:12px;padding:10px 13px;background:rgba(240,180,41,.06);border:1px solid rgba(240,180,41,.2);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.75}
+.vs-note b{color:var(--gold)}
+
+/* ─── 스크롤바 ─── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ─── 애니메이션 ─── */
+.fi{animation:fi .4s ease forwards}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── 인쇄 ─── */
+@media print{
+  .hdr,.actbar,.mov,.bcalc,.ibox,.grid2>div:last-child,#simSection{display:none!important}
+  #results{display:block!important}
+  body{background:#fff;color:#000}
+  .sc,.sec{border:1px solid #ccc!important;background:#fff!important}
+  .scval,.sv{color:#000!important}
+  .scards{grid-template-columns:repeat(3,1fr)!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ── 헤더 ── -->
+<div class="hdr">
+  <div class="hbadge">@성셈 세무 계산기</div>
+  <h1><span class="brand">@성셈</span>&nbsp;<span class="sub">DC형 퇴직소득세</span> 계산기</h1>
+  <p class="hdesc">확정기여형(DC) 퇴직연금 · 운용수익 포함 · 지방소득세 10% 포함 자동 계산</p>
+  <div class="hline"></div>
+</div>
+
+<div class="wrap">
+
+  <!-- ① 입력 + 참고표 -->
+  <div class="grid2">
+
+    <!-- 좌: 입력 -->
+    <div>
+      <div class="sec sb">
+        <div class="stitle">💰 예상 퇴직금 입력</div>
+        <div class="field">
+          <label>예상 퇴직금 합계 (원금 + DC 운용수익)<span class="req">*</span><span class="hint">원 단위</span></label>
+          <input type="text" id="retirePay" placeholder="예: 470,000,000" oninput="fC(this)" onblur="fC(this)">
+        </div>
+        <div class="ibox">💡 원 단위로 입력 · 콤마 자동 표시 <b>예) 4억 7천만원 → 470,000,000</b></div>
+      </div>
+
+      <div class="sec sg">
+        <div class="stitle">📅 근속기간 자동 계산</div>
+        <div class="drow">
+          <div class="field" style="margin-bottom:0">
+            <label>입사일<span class="req">*</span></label>
+            <input type="date" id="joinDate" onchange="onDate()">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>퇴직일<span class="req">*</span></label>
+            <input type="date" id="retireDate" onchange="onDate()">
+          </div>
+        </div>
+        <div class="abox" id="abox">
+          <div>실제 근속기간: <span class="av" id="ab_p">-</span></div>
+          <div>적용 근속연수: <span class="ay" id="ab_y">-</span>년 <span style="font-size:11px;color:var(--text3)">(1년 미만 올림)</span></div>
+        </div>
+        <div class="ibox">⚡ <b>입사일·퇴직일 입력 시 근속연수 자동 산정</b><br>예) 2008.04.05 ~ 2024.01.01 → 15년 8개월 27일 → <b>16년</b></div>
+      </div>
+
+      <button class="bcalc" type="button" onclick="doCalc()">🧮 퇴직소득세 계산하기</button>
+    </div>
+
+    <!-- 우: 참고표 3개 -->
+    <div>
+      <div class="sec sp">
+        <div class="stitle">📋 근속연수공제 기준표</div>
+        <div class="tw"><table class="rtbl" id="tSvc">
+          <thead><tr><th>근속연수</th><th>공제액</th></tr></thead>
+          <tbody>
+            <tr data-a="0"  data-b="5"  ><td>5년 이하</td><td>100만원 × 근속연수</td></tr>
+            <tr data-a="6"  data-b="10" ><td>6 ~ 10년</td><td>500만원 + 200만원 × (연수-5)</td></tr>
+            <tr data-a="11" data-b="20" ><td>11 ~ 20년</td><td>1,500만원 + 250만원 × (연수-10)</td></tr>
+            <tr data-a="21" data-b="999"><td>20년 초과</td><td>4,000만원 + 300만원 × (연수-20)</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+
+      <div class="sec so">
+        <div class="stitle">📋 환산급여공제 기준표</div>
+        <div class="tw"><table class="rtbl" id="tConv">
+          <thead><tr><th>환산급여</th><th>공제액</th></tr></thead>
+          <tbody>
+            <tr data-a="0"         data-b="8000000"   ><td>800만원 이하</td><td>전액 공제</td></tr>
+            <tr data-a="8000001"   data-b="70000000"  ><td>~ 7,000만원</td><td>800만원+(환산급여-800만원)×60%</td></tr>
+            <tr data-a="70000001"  data-b="100000000" ><td>~ 10,000만원</td><td>4,520만원+(환산급여-7,000만원)×55%</td></tr>
+            <tr data-a="100000001" data-b="300000000" ><td>~ 30,000만원</td><td>6,170만원+(환산급여-10,000만원)×45%</td></tr>
+            <tr data-a="300000001" data-b="9999999999"><td>30,000만원 초과</td><td>15,170만원+(환산급여-30,000만원)×35%</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+
+      <div class="sec st">
+        <div class="stitle">📊 소득세 세율표</div>
+        <div class="tw"><table class="rtbl" id="tRate">
+          <thead><tr><th>과세표준</th><th>세율</th><th>누진공제</th></tr></thead>
+          <tbody>
+            <tr data-a="0"          data-b="14000000"   ><td>1,400만원 이하</td><td>6%</td><td>—</td></tr>
+            <tr data-a="14000001"   data-b="50000000"   ><td>~ 5,000만원</td><td>15%</td><td>126만원</td></tr>
+            <tr data-a="50000001"   data-b="88000000"   ><td>~ 8,800만원</td><td>24%</td><td>576만원</td></tr>
+            <tr data-a="88000001"   data-b="150000000"  ><td>~ 1억5천만원</td><td>35%</td><td>1,544만원</td></tr>
+            <tr data-a="150000001"  data-b="300000000"  ><td>~ 3억원</td><td>38%</td><td>1,994만원</td></tr>
+            <tr data-a="300000001"  data-b="500000000"  ><td>~ 5억원</td><td>40%</td><td>2,594만원</td></tr>
+            <tr data-a="500000001"  data-b="1000000000" ><td>~ 10억원</td><td>42%</td><td>3,594만원</td></tr>
+            <tr data-a="1000000001" data-b="9999999999" ><td>10억원 초과</td><td>45%</td><td>6,594만원</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div><!-- /grid2 -->
+
+  <!-- ② 결과 (입력 후 표시) -->
+  <div id="results">
+
+    <!-- 요약 카드 9개 -->
+    <div class="scards fi">
+      <div class="sc scb"><div class="sclbl">예상 퇴직금</div><div class="scval" id="sc1"></div><div class="scunit">원</div></div>
+      <div class="sc scg"><div class="sclbl">적용 근속연수</div><div class="scval" id="sc2"></div><div class="scunit">년</div></div>
+      <div class="sc sct"><div class="sclbl">근속연수공제</div><div class="scval" id="sc3"></div><div class="scunit">원</div></div>
+      <div class="sc scd"><div class="sclbl">퇴직소득세</div><div class="scval" id="sc4"></div><div class="scunit">원</div></div>
+      <div class="sc scp"><div class="sclbl">지방소득세 (10%)</div><div class="scval" id="sc5"></div><div class="scunit">원</div></div>
+      <div class="sc scw"><div class="sclbl">총 세금 합계</div><div class="scval" id="sc6"></div><div class="scunit">원</div></div>
+      <div class="sc scgr"><div class="sclbl">세후 수령액</div><div class="scval" id="sc7"></div><div class="scunit">원</div></div>
+      <div class="sc sco"><div class="sclbl">실효세율</div><div class="scval" id="sc8"></div><div class="scunit">총세금÷퇴직금</div></div>
+      <div class="sc scb" style="opacity:.8"><div class="sclbl">근속기간</div><div class="scval" id="sc9" style="font-size:13px"></div><div class="scunit">입사→퇴직</div></div>
+    </div>
+
+    <!-- 일시금 vs 연금수령 절세 비교 -->
+    <div class="sec sgr fi" id="vsSection">
+      <div class="stitle">💡 일시금 VS 연금수령 절세 비교</div>
+      <div class="vs-wrap">
+        <div class="vs-card vs-lump">
+          <div class="vs-badge">💰 일시금 수령</div>
+          <div class="vs-amount" id="vs_lump_tax"></div>
+          <div class="vs-sub">납부 세액 (지방세 포함)</div>
+        </div>
+        <div class="vs-card vs-pension">
+          <div class="vs-badge">📈 연금 수령 시</div>
+          <div class="vs-amount" id="vs_pension_tax"></div>
+          <div class="vs-sub" id="vs_pension_sub">예상 세액 (70% 적용)</div>
+        </div>
+      </div>
+      <div class="vs-saving">
+        <div class="vs-saving-icon">✅</div>
+        <div>
+          <div class="vs-saving-text">연금수령 절세액: <span class="vs-saving-pct" id="vs_save_amt"></span> &nbsp;<span id="vs_save_pct" style="font-size:13px;color:var(--teal)"></span></div>
+          <div class="vs-saving-sub" id="vs_save_note"></div>
+        </div>
+      </div>
+      <div class="vs-note">
+        💡 연금수령 시 퇴직소득세의 <b>70%만 납부</b>합니다. 단, 연금 수령 연차가 <b>11년차 이후</b>부터는 <b>60%로 더 절세</b>됩니다. (개인연금계좌 IRP 활용 시 적용)
+      </div>
+    </div>
+
+    <!-- 단계별 계산 -->
+    <div class="sec sb fi">
+      <div class="stitle">🔢 단계별 계산 과정</div>
+      <div class="tw">
+        <table class="stbl">
+          <thead><tr><th style="width:36px">단계</th><th>항목 및 계산식</th><th style="text-align:right;min-width:160px">결과</th></tr></thead>
+          <tbody id="stepBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ③ 시뮬레이션 (계산 후 표시) -->
+    <div class="sec sw fi" id="simSection">
+      <div class="stitle">📊 퇴직급여 × 근속연수별 퇴직소득세 시뮬레이션
+        <span style="font-size:10px;font-weight:400;color:var(--text3);text-transform:none;letter-spacing:0;margin-left:auto">(지방소득세 10% 포함 · 만원 단위)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:11px 13px;background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.2);border-radius:8px;font-size:12px;color:var(--text2)">
+        🔑 <b style="color:var(--orange)">실효세율 = 결정세액 ÷ 퇴직급여</b>
+        &nbsp;|&nbsp; ⬆ 퇴직급여 높을수록 실효세율 <b style="color:var(--danger)">높음</b>
+        &nbsp;|&nbsp; ⬆ 근속연수 길수록 실효세율 <b style="color:var(--success)">낮음</b>
+      </div>
+      <div class="tw">
+        <table class="simtbl">
+          <thead><tr>
+            <th>퇴직급여</th>
+            <th>5년</th><th>10년</th><th>15년</th>
+            <th>20년</th><th>25년</th><th>30년</th>
+          </tr></thead>
+          <tbody id="simBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text3);line-height:1.8">
+        ※ 세금 = 퇴직소득세 + 지방소득세(10%) 합산 &nbsp;|&nbsp; ※ 근속연수는 정확히 해당 년수 적용(올림 없음) &nbsp;|&nbsp; ※ 괄호 안 = 실효세율<br>
+        ※ <span id="simNote" style="color:var(--gold);font-weight:600"></span>
+      </div>
+    </div>
+
+    <!-- ④ 액션 버튼 4개 -->
+    <div class="actbar fi">
+      <button class="abtn ab1" type="button" onclick="showEasy()">📋 쉬운 설명 보고서</button>
+      <button class="abtn ab2" type="button" onclick="doPrint()">🖨️ 인쇄하기</button>
+      <button class="abtn ab3" type="button" onclick="doSave()">💾 리포트 저장</button>
+      <a class="abtn ab4" href="https://blog.naver.com/semusatax" target="_blank" rel="noopener">👨‍💼 세무전문가 상담</a>
+    </div>
+  </div><!-- /results -->
+
+</div><!-- /wrap -->
+
+<!-- ── 쉬운 설명 모달 ── -->
+<div class="mov" id="modal" onclick="if(event.target===this)closeMod()">
+  <div class="mbox">
+    <div class="mhd">
+      <div>
+        <div class="mttl">📋 쉬운 설명 보고서</div>
+        <div class="mdt" id="mdt"></div>
+      </div>
+      <button class="mx" type="button" onclick="closeMod()">✕</button>
+    </div>
+    <div class="mbd" id="mbd"></div>
+    <div class="mft">
+      <button class="abtn ab2" type="button" onclick="doPrint()" style="flex:1;min-width:0">🖨️ 인쇄</button>
+      <button class="abtn ab3" type="button" onclick="doPdfSave()" style="flex:1;min-width:0">📄 PDF 저장</button>
+      <button class="abtn ab3" type="button" onclick="doSave()" style="flex:1;min-width:0">💾 리포트 저장</button>
+      <button class="abtn" type="button" onclick="closeMod()" style="flex:1;min-width:0;background:var(--surface2);color:var(--text2);border:1px solid var(--border)">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   핵심 계산 엔진
+═══════════════════════════════════════════════════ */
+function getSvcDed(y){
+  if(y<=5)  return 1000000*y;
+  if(y<=10) return 5000000+2000000*(y-5);
+  if(y<=20) return 15000000+2500000*(y-10);
+  return 40000000+3000000*(y-20);
+}
+function getCvDed(c){
+  if(c<=8000000)   return c;
+  if(c<=70000000)  return 8000000+(c-8000000)*0.6;
+  if(c<=100000000) return 45200000+(c-70000000)*0.55;
+  if(c<=300000000) return 61700000+(c-100000000)*0.45;
+  return 151700000+(c-300000000)*0.35;
+}
+var BR=[
+  {l:14000000,  r:.06,d:0},       {l:50000000,  r:.15,d:1260000},
+  {l:88000000,  r:.24,d:5760000}, {l:150000000, r:.35,d:15440000},
+  {l:300000000, r:.38,d:19940000},{l:500000000, r:.40,d:25940000},
+  {l:1000000000,r:.42,d:35940000},{l:Infinity,  r:.45,d:65940000}
+];
+function getTax(base){
+  if(base<=0) return {tx:0,r:.06,d:0};
+  for(var i=0;i<BR.length;i++) if(base<=BR[i].l) return {tx:base*BR[i].r-BR[i].d,r:BR[i].r,d:BR[i].d};
+  return {tx:base*.45-65940000,r:.45,d:65940000};
+}
+function calcAll(pay,sy){
+  var sdc=getSvcDed(sy);
+  var base=Math.max(0,pay-sdc);
+  var cs=(base/sy)*12;
+  var cdc=getCvDed(cs);
+  var tb=Math.max(0,cs-cdc);
+  var t=getTax(tb);
+  var cvt=Math.max(0,t.tx);
+  var itax=Math.round((cvt/12)*sy);
+  var ltax=Math.round(itax*0.1);
+  var total=itax+ltax;
+  return{sdc:sdc,cs:cs,cdc:cdc,tb:tb,cvt:cvt,taxR:t.r,taxD:t.d,itax:itax,ltax:ltax,total:total,after:pay-total,eff:pay>0?(total/pay)*100:0};
+}
+
+/* ═══════════════════════════════════════════════════
+   유틸
+═══════════════════════════════════════════════════ */
+function fC(el){var r=el.value.replace(/,/g,'').replace(/[^0-9]/g,'');if(!r)return;el.value=parseInt(r,10).toLocaleString('ko-KR');}
+function pC(id){return parseInt(document.getElementById(id).value.replace(/,/g,''),10)||0;}
+function F(v){return Math.round(v).toLocaleString('ko-KR');}
+
+/* ═══════════════════════════════════════════════════
+   날짜 자동 계산
+═══════════════════════════════════════════════════ */
+function onDate(){
+  var jv=document.getElementById('joinDate').value;
+  var rv=document.getElementById('retireDate').value;
+  if(!jv||!rv) return;
+  var jd=new Date(jv),rd=new Date(rv);
+  var ab=document.getElementById('abox');
+  if(rd<=jd){
+    ab.style.display='block';
+    document.getElementById('ab_p').textContent='⚠️ 퇴직일이 입사일보다 빠릅니다';
+    document.getElementById('ab_y').textContent='-';
+    window._sy=0; return;
+  }
+  var y=rd.getFullYear()-jd.getFullYear();
+  var m=rd.getMonth()-jd.getMonth();
+  var d=rd.getDate()-jd.getDate();
+  if(d<0){m--;d+=new Date(rd.getFullYear(),rd.getMonth(),0).getDate();}
+  if(m<0){y--;m+=12;}
+  var ps=y+'년 '+m+'개월 '+d+'일';
+  var sy=(m>0||d>0)?y+1:(y>0?y:1);
+  document.getElementById('ab_p').textContent=ps;
+  document.getElementById('ab_y').textContent=sy;
+  ab.style.display='block';
+  window._sy=sy; window._ps=ps;
+}
+
+/* ═══════════════════════════════════════════════════
+   메인 계산
+═══════════════════════════════════════════════════ */
+var _D=null;
+function doCalc(){
+  try{
+    var pay=pC('retirePay');
+    if(!pay||pay<=0){alert('예상 퇴직금을 입력해주세요.');return;}
+    var jv=document.getElementById('joinDate').value;
+    var rv=document.getElementById('retireDate').value;
+    if(!jv||!rv){alert('입사일과 퇴직일을 입력해주세요.');return;}
+    if(!window._sy||window._sy<=0){alert('근속연수를 확인해주세요.\n(입사일·퇴직일을 먼저 입력해주세요)');return;}
+    var sy=window._sy;
+    var r=calcAll(pay,sy);
+
+    /* 참고표 하이라이트 */
+    hlTbl('tSvc', sy,   'hlo', true);
+    hlTbl('tConv',r.cs, 'hlg', false);
+    hlTbl('tRate',r.tb, 'hlb', false);
+
+    _D={pay:pay,sy:sy,ps:window._ps||'',jv:jv,rv:rv,
+        sdc:r.sdc,cs:r.cs,cdc:r.cdc,tb:r.tb,cvt:r.cvt,
+        taxR:r.taxR,taxD:r.taxD,itax:r.itax,ltax:r.ltax,
+        total:r.total,after:r.after,eff:r.eff};
+
+    /* 요약 카드 */
+    document.getElementById('sc1').textContent=F(pay);
+    document.getElementById('sc2').textContent=sy;
+    document.getElementById('sc3').textContent=F(r.sdc);
+    document.getElementById('sc4').textContent=F(r.itax);
+    document.getElementById('sc5').textContent=F(r.ltax);
+    document.getElementById('sc6').textContent=F(r.total);
+    document.getElementById('sc7').textContent=F(r.after);
+    document.getElementById('sc8').textContent=r.eff.toFixed(2)+'%';
+    document.getElementById('sc9').textContent=window._ps||'';
+
+    buildStep(_D);
+    buildSim(pay,sy);
+    buildVS(_D);   /* 일시금 vs 연금 비교 */
+
+    document.getElementById('results').style.display='block';
+    document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){alert('계산 오류: '+e.message);console.error(e);}
+}
+
+/* ═══════════════════════════════════════════════════
+   단계 테이블
+═══════════════════════════════════════════════════ */
+function buildStep(d){
+  var rows=[
+    {n:1,nm:'근속연수 확정',cls:'b',
+     f:'입사 '+d.jv+' → 퇴직 '+d.rv+'<br>실제 근속: '+d.ps+' → 1년 미만 올림',v:d.sy+'년'},
+    {n:2,nm:'근속연수공제',cls:'',
+     f:svcF(d.sy),v:F(d.sdc)+'원'},
+    {n:3,nm:'환산급여',cls:'t',
+     f:'('+F(d.pay)+'원 - '+F(d.sdc)+'원) ÷ '+d.sy+'년 × 12',v:F(Math.round(d.cs))+'원'},
+    {n:4,nm:'환산급여공제',cls:'o',
+     f:cvdF(d.cs),v:F(Math.round(d.cdc))+'원'},
+    {n:5,nm:'과세표준',cls:'p',
+     f:'환산급여 '+F(Math.round(d.cs))+'원 - 환산급여공제 '+F(Math.round(d.cdc))+'원',v:F(d.tb)+'원'},
+    {n:6,nm:'환산산출세액',cls:'',
+     f:F(d.tb)+'원 × '+(d.taxR*100).toFixed(0)+'% - 누진공제 '+F(d.taxD)+'원',v:F(Math.round(d.cvt))+'원'},
+    {n:7,nm:'퇴직소득세 (산출세액)',cls:'d',
+     f:'환산산출세액 '+F(Math.round(d.cvt))+'원 ÷ 12 × '+d.sy+'년',v:F(d.itax)+'원'},
+    {n:8,nm:'지방소득세 (10%)',cls:'p',
+     f:'퇴직소득세 '+F(d.itax)+'원 × 10%',v:F(d.ltax)+'원'}
+  ];
+  var h=rows.map(function(r){
+    return '<tr><td><div class="snum">'+r.n+'</div></td>'
+      +'<td><div class="snc"><div><div class="snm">'+r.nm+'</div>'
+      +'<div class="sf">'+r.f+'</div></div></div></td>'
+      +'<td class="sv '+r.cls+'">'+r.v+'</td></tr>';
+  }).join('');
+  h+='<tr class="rtotal"><td colspan="2" style="padding:14px">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--text)">💸 총 퇴직소득세 (퇴직소득세 + 지방소득세)</div></td>'
+    +'<td class="sv d" style="font-size:16px">'+F(d.total)+'원</td></tr>';
+  h+='<tr class="rafter"><td colspan="2" style="padding:14px">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--success)">🎉 세후 수령액 (퇴직금 - 총 세금)</div></td>'
+    +'<td class="sv gr" style="font-size:17px">'+F(d.after)+'원</td></tr>';
+  h+='<tr class="reff"><td colspan="2" style="padding:14px">'
+    +'<div style="font-size:14px;font-weight:700;color:var(--orange)">📊 실효세율 (총 퇴직소득세 ÷ 퇴직금 × 100)</div>'
+    +'<div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px">'+F(d.total)+'원 ÷ '+F(d.pay)+'원 × 100</div></td>'
+    +'<td class="sv o" style="font-size:18px;font-weight:700">'+d.eff.toFixed(2)+'%</td></tr>';
+  document.getElementById('stepBody').innerHTML=h;
+}
+function svcF(y){
+  if(y<=5)  return '100만원 × '+y+'년';
+  if(y<=10) return '500만원 + 200만원 × ('+y+'년 - 5년)';
+  if(y<=20) return '1,500만원 + 250만원 × ('+y+'년 - 10년)';
+  return '4,000만원 + 300만원 × ('+y+'년 - 20년)';
+}
+function cvdF(c){
+  var v=Math.round(c);
+  if(v<=8000000)   return '환산급여 800만원 이하 → 전액 공제';
+  if(v<=70000000)  return '800만원 + ('+F(v)+' - 800만원) × 60%';
+  if(v<=100000000) return '4,520만원 + ('+F(v)+' - 7,000만원) × 55%';
+  if(v<=300000000) return '6,170만원 + ('+F(v)+' - 10,000만원) × 45%';
+  return '15,170만원 + ('+F(v)+' - 30,000만원) × 35%';
+}
+
+/* ═══════════════════════════════════════════════════
+   일시금 vs 연금수령 절세 비교
+═══════════════════════════════════════════════════ */
+function buildVS(d){
+  /* 일시금: 퇴직소득세 + 지방소득세 = d.total */
+  var lump = d.total;
+
+  /* 연금수령:
+     - 10년 이하 수령 연차: 퇴직소득세의 70%
+     - 11년 이후 수령 연차: 퇴직소득세의 60%
+     통상 70% 기준으로 표시, 60% 참고 병기 */
+  var pension70 = Math.round(d.itax * 0.70 + d.ltax);   /* itax의 70% + 지방세 */
+  var pension60 = Math.round(d.itax * 0.60 + d.ltax);   /* 11년차 이후 */
+
+  var saving70 = lump - pension70;
+  var savePct  = (saving70 / lump * 100).toFixed(1);
+
+  document.getElementById('vs_lump_tax').textContent    = F(lump)+'원';
+  document.getElementById('vs_pension_tax').textContent = F(pension70)+'원';
+  document.getElementById('vs_pension_sub').textContent = '예상 세액 (70% 적용, 10년 이하 수령)';
+  document.getElementById('vs_save_amt').textContent    = F(saving70)+'원';
+  document.getElementById('vs_save_pct').textContent    = '('+savePct+'% 절약)';
+  document.getElementById('vs_save_note').textContent   =
+    '* 실제 연금수령 연차 10년 초과 시 60% 절세 적용 → 절세액 '+F(lump-pension60)+'원 ('+
+    (( (lump-pension60)/lump)*100).toFixed(1)+'%)';
+
+  /* _D에 연금 정보도 저장 */
+  d.lump=lump; d.pension70=pension70; d.pension60=pension60;
+  d.saving70=saving70; d.savePct=savePct;
+  d.saving60=lump-pension60;
+  d.savePct60=((lump-pension60)/lump*100).toFixed(1);
+}
+
+/* ═══════════════════════════════════════════════════
+   시뮬레이션
+═══════════════════════════════════════════════════ */
+var SP=[100000000,200000000,300000000,500000000,1000000000];
+var SL=['1억원','2억원','3억원','5억원','10억원'];
+var SY=[5,10,15,20,25,30];
+
+function buildSim(curPay,curYr){
+  /* 가장 가까운 행(퇴직금) 인덱스 */
+  var ri=0,md=Infinity;
+  for(var i=0;i<SP.length;i++){var dd=Math.abs(SP[i]-curPay);if(dd<md){md=dd;ri=i;}}
+  /* 가장 가까운 열(근속연수) 인덱스 */
+  var ci=-1;
+  for(var j=0;j<SY.length;j++){if(SY[j]===curYr){ci=j;break;}}
+  if(ci<0){md=Infinity;for(var j=0;j<SY.length;j++){var dd=Math.abs(SY[j]-curYr);if(dd<md){md=dd;ci=j;}}}
+
+  var h='';
+  for(var i=0;i<SP.length;i++){
+    var rCls=(i===ri)?'simrow-hl':'';
+    h+='<tr class="'+rCls+'"><td>'+SL[i]+'</td>';
+    for(var j=0;j<SY.length;j++){
+      var r=calcAll(SP[i],SY[j]);
+      var man=Math.round(r.total/10000);
+      var cCls=(j===ci)?'simcol-hl':'';
+      h+='<td class="'+cCls+'">'+man.toLocaleString('ko-KR')+'만원'
+        +'<span class="simrate">실효 '+r.eff.toFixed(2)+'%</span></td>';
+    }
+    h+='</tr>';
+  }
+  document.getElementById('simBody').innerHTML=h;
+  document.getElementById('simNote').textContent=
+    '★ 현재 계산값과 가장 가까운 구간: '+SL[ri]+' × '+SY[ci]+'년 (골드 강조)';
+}
+
+/* ═══════════════════════════════════════════════════
+   참고표 하이라이트
+═══════════════════════════════════════════════════ */
+function hlTbl(id,val,cls,intCmp){
+  var rows=document.querySelectorAll('#'+id+' tbody tr');
+  for(var i=0;i<rows.length;i++){
+    rows[i].classList.remove('hlb','hlg','hlo');
+    var a=parseFloat(rows[i].dataset.a),b=parseFloat(rows[i].dataset.b);
+    var match=intCmp?(val>=a&&val<=b):(val>=a&&val<=b);
+    if(match) rows[i].classList.add(cls);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   쉬운 설명 모달 (시뮬레이션 포함)
+═══════════════════════════════════════════════════ */
+function showEasy(){
+  var d=_D;
+  if(!d){alert('먼저 계산하기를 눌러주세요.');return;}
+  document.getElementById('mdt').textContent='작성일: '+new Date().toLocaleDateString('ko-KR');
+
+  /* 시뮬레이션 HTML 생성 */
+  var ri=0,md=Infinity;
+  for(var i=0;i<SP.length;i++){var dd=Math.abs(SP[i]-d.pay);if(dd<md){md=dd;ri=i;}}
+
+  var simH='<thead><tr><th>퇴직급여</th>';
+  for(var j=0;j<SY.length;j++) simH+='<th>'+SY[j]+'년</th>';
+  simH+='</tr></thead><tbody>';
+  for(var i=0;i<SP.length;i++){
+    var hl=(i===ri)?'mhl':'';
+    simH+='<tr class="'+hl+'"><td>'+SL[i]+'</td>';
+    for(var j=0;j<SY.length;j++){
+      var r=calcAll(SP[i],SY[j]);
+      simH+='<td>'+Math.round(r.total/10000).toLocaleString('ko-KR')+'만<br><span style="font-size:9px;color:inherit;opacity:.75">'+r.eff.toFixed(1)+'%</span></td>';
+    }
+    simH+='</tr>';
+  }
+  simH+='</tbody>';
+
+  document.getElementById('mbd').innerHTML=
+    /* 개요 */
+    '<div class="esec" style="background:rgba(79,142,247,.07);border-color:rgba(79,142,247,.25)">'
+    +'<h4>📌 계산 개요</h4>'
+    +'<p>예상 퇴직금 <span class="bnum">'+F(d.pay)+'원</span> (원금 + DC 운용수익 포함)<br>'
+    +'근속기간: '+d.ps+' → 적용 근속연수 <span class="bnum">'+d.sy+'년</span><br>'
+    +'('+d.jv+' 입사 ~ '+d.rv+' 퇴직)</p></div>'
+    /* 근속연수공제 */
+    +'<div class="esec">'
+    +'<h4>1️⃣ 근속연수공제 — 오래 일한 만큼 세금을 줄여줍니다</h4>'
+    +'<p>근속 '+d.sy+'년 → 공제액: <span class="bnum">'+F(d.sdc)+'원</span><br>'
+    +'퇴직금에서 이 금액을 먼저 제외하고 환산급여를 계산합니다.</p></div>'
+    /* 환산급여 */
+    +'<div class="esec">'
+    +'<h4>2️⃣ 환산급여 &amp; 환산급여공제</h4>'
+    +'<p>환산급여: <span class="bnum">'+F(Math.round(d.cs))+'원</span><br>'
+    +'환산급여공제: <span class="bnum">'+F(Math.round(d.cdc))+'원</span><br>'
+    +'과세표준: <span class="bnum">'+F(d.tb)+'원</span></p></div>'
+    /* 세금 */
+    +'<div class="esec">'
+    +'<h4>3️⃣ 세금 계산 (세율 '+(d.taxR*100).toFixed(0)+'% 적용)</h4>'
+    +'<p>퇴직소득세: <span class="bnum">'+F(d.itax)+'원</span><br>'
+    +'지방소득세: <span class="bnum">'+F(d.ltax)+'원</span> (퇴직소득세의 10%)<br>'
+    +'<b>총 세금: <span class="bnum" style="color:var(--danger)">'+F(d.total)+'원</span></b></p></div>'
+    /* 결론 */
+    +'<div class="esec" style="background:rgba(52,211,153,.07);border-color:rgba(52,211,153,.25)">'
+    +'<h4>✅ 최종 결론</h4>'
+    +'<p>퇴직금 <span class="bnum">'+F(d.pay)+'원</span>에서<br>'
+    +'세금 <span class="bnum" style="color:var(--danger)">'+F(d.total)+'원</span> 공제 후<br>'
+    +'실제 수령액: <span class="bnum" style="color:var(--success)">'+F(d.after)+'원</span><br>'
+    +'<b>실효세율: <span style="color:var(--orange);font-family:var(--mono)">'+d.eff.toFixed(2)+'%</span></b></p></div>'
+    /* 일시금 vs 연금 비교 */
+    +'<div class="esec" style="background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.3)">'
+    +'<h4>💡 일시금 VS 연금수령 절세 비교</h4>'
+    +'<p>'
+    +'<span style="display:inline-block;background:rgba(240,180,41,.12);border-radius:6px;padding:3px 10px;font-size:12px;color:var(--gold);font-weight:700;margin-bottom:6px">💰 일시금 납부세액</span><br>'
+    +'<span class="bnum">'+F(d.lump)+'원</span> (퇴직소득세 + 지방소득세)<br><br>'
+    +'<span style="display:inline-block;background:rgba(52,211,153,.15);border-radius:6px;padding:3px 10px;font-size:12px;color:var(--success);font-weight:700;margin-bottom:6px">📈 연금수령 예상세액 (10년 이하, 70% 적용)</span><br>'
+    +'<span class="bnum" style="color:var(--success)">'+F(d.pension70)+'원</span><br><br>'
+    +'<span style="display:inline-block;background:rgba(45,212,191,.12);border-radius:6px;padding:3px 10px;font-size:12px;color:var(--teal);font-weight:700;margin-bottom:6px">✅ 절세 효과</span><br>'
+    +'연금 수령 시 <span class="bnum" style="color:var(--teal)">'+F(d.saving70)+'원 절세 ('+d.savePct+'%)</span><br>'
+    +'11년차 이후 60% 적용 시: <b style="color:var(--teal)">'+F(d.saving60)+'원 절세 ('+d.savePct60+'%)</b></p>'
+    +'<p style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.7;padding-top:10px;border-top:1px solid var(--border)">* 연금수령 시 퇴직소득세의 70%만 납부합니다.<br>* 연금 수령 연차 11년차 이후부터는 60%로 더 절세됩니다. (개인연금계좌 IRP 활용 시)</p></div>'
+    /* 시뮬레이션 */
+    +'<div class="esec" style="border-color:rgba(251,146,60,.3)">'
+    +'<h4>📊 퇴직급여 × 근속연수별 퇴직소득세 시뮬레이션 <span style="font-weight:400;font-size:11px;color:var(--text3)">(지방세 포함 · 만원 / 실효세율%)</span></h4>'
+    +'<div class="msim"><table class="msimtbl">'+simH+'</table></div>'
+    +'<p style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.7">★ 골드 강조 행 = 현재 퇴직금과 가장 가까운 구간 &nbsp;|&nbsp; 근속연수별 세금 및 절세 효과 비교용</p></div>'
+    /* 안내 */
+    +'<div class="notice">⚠️ 본 계산은 참고용이며 실제 세액은 개인 상황에 따라 달라질 수 있습니다.<br>'
+    +'정확한 절세 전략은 세무전문가와 상담하세요. → '
+    +'<a href="https://blog.naver.com/semusatax" target="_blank" style="color:var(--accent)">@성셈 상담 바로가기</a></div>';
+
+  document.getElementById('modal').classList.add('open');
+}
+function closeMod(){document.getElementById('modal').classList.remove('open');}
+
+/* ═══════════════════════════════════════════════════
+   인쇄
+═══════════════════════════════════════════════════ */
+function doPrint(){closeMod();setTimeout(function(){window.print();},300);}
+
+/* ═══════════════════════════════════════════════════
+   PDF 저장 (인쇄 대화상자 → PDF)
+═══════════════════════════════════════════════════ */
+function doPdfSave(){
+  if(!_D){alert('먼저 계산하기를 눌러주세요.');return;}
+  /* 모달 내 내용을 새 창으로 열어 PDF 인쇄 */
+  var content=document.getElementById('mbd').innerHTML;
+  var win=window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">'
+    +'<meta name="viewport" content="width=device-width,initial-scale=1.0">'
+    +'<title>@성셈 DC형 퇴직소득세 보고서</title>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">'
+    +'<style>'
+    +'*{box-sizing:border-box;margin:0;padding:0}'
+    +'body{font-family:\'Noto Sans KR\',sans-serif;padding:32px;color:#1a1a2e;background:#fff;font-size:13px}'
+    +'.esec{border:1px solid #dde;border-radius:8px;padding:14px;margin-bottom:12px;page-break-inside:avoid}'
+    +'.esec h4{font-size:13px;font-weight:700;margin-bottom:8px;color:#334}'
+    +'.esec p{font-size:13px;line-height:1.9;color:#222}'
+    +'.bnum{font-weight:700;font-size:14px;color:#b8860b}'
+    +'.notice{font-size:11px;color:#666;padding:10px 14px;border:1px solid #fcc;border-radius:8px;margin-top:8px;line-height:1.7}'
+    +'.msimtbl{width:100%;border-collapse:collapse;font-size:11px}'
+    +'.msimtbl th{background:#f0f2f8;padding:6px 8px;text-align:center;font-size:10px;font-weight:700;border-bottom:1px solid #ccd}'
+    +'.msimtbl th:first-child{text-align:left}'
+    +'.msimtbl td{padding:6px 8px;border-bottom:1px solid #eee;text-align:right;font-size:11px;color:#444}'
+    +'.msimtbl td:first-child{text-align:left;font-weight:600;color:#222}'
+    +'.mhl td{background:#fff8e1!important;color:#b8860b!important;font-weight:700}'
+    +'h2{font-size:18px;font-weight:700;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid #4f8ef7;color:#1a1a2e}'
+    +'.vs-saving{background:#f0fff8;border:1px solid #a3e4d0;border-radius:8px;padding:12px 14px;margin:8px 0}'
+    +'.vs-note{background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:10px 12px;font-size:11px;color:#555;margin-top:8px}'
+    +'@media print{body{padding:20px}.esec{page-break-inside:avoid}}'
+    +'</style></head><body>'
+    +'<h2>@성셈 DC형 퇴직소득세 쉬운 설명 보고서</h2>'
+    +'<p style="font-size:11px;color:#888;margin-bottom:16px">작성일: '+new Date().toLocaleDateString('ko-KR')+'</p>'
+    +content
+    +'</body></html>');
+  win.document.close();
+  win.onload=function(){win.print();};
+}
+
+/* ═══════════════════════════════════════════════════
+   리포트 저장 (TXT)
+═══════════════════════════════════════════════════ */
+function doSave(){
+  var d=_D;
+  if(!d){alert('먼저 계산하기를 눌러주세요.');return;}
+  var L=[
+    '@성셈 DC형 퇴직소득세 계산 결과',
+    '작성일: '+new Date().toLocaleString('ko-KR'),
+    '='.repeat(54),
+    '[입력 정보]',
+    '예상 퇴직금: '+F(d.pay)+'원',
+    '입사일: '+d.jv+' / 퇴직일: '+d.rv,
+    '근속기간: '+d.ps+' → 적용 근속연수: '+d.sy+'년','',
+    '[단계별 계산]',
+    '① 근속연수공제: '+F(d.sdc)+'원',
+    '② 환산급여: '+F(Math.round(d.cs))+'원',
+    '③ 환산급여공제: '+F(Math.round(d.cdc))+'원',
+    '④ 과세표준: '+F(d.tb)+'원',
+    '⑤ 세율: '+(d.taxR*100).toFixed(0)+'% / 누진공제: '+F(d.taxD)+'원',
+    '⑥ 환산산출세액: '+F(Math.round(d.cvt))+'원',
+    '⑦ 퇴직소득세: '+F(d.itax)+'원',
+    '⑧ 지방소득세: '+F(d.ltax)+'원','',
+    '[최종 결과]',
+    '총 퇴직소득세: '+F(d.total)+'원',
+    '세후 수령액: '+F(d.after)+'원',
+    '실효세율: '+d.eff.toFixed(2)+'%','',
+    '[일시금 VS 연금수령 절세 비교]',
+    '일시금 납부세액: '+F(d.lump)+'원',
+    '연금수령 예상세액(70%): '+F(d.pension70)+'원',
+    '절세액(70% 기준): '+F(d.saving70)+'원 ('+d.savePct+'% 절약)',
+    '연금수령 예상세액(60%, 11년차~): '+F(d.pension60)+'원',
+    '절세액(60% 기준): '+F(d.saving60)+'원 ('+d.savePct60+'% 절약)','',
+    '[시뮬레이션 - 퇴직급여 × 근속연수별 퇴직소득세(지방세 포함)]',
+    '퇴직급여\t5년\t10년\t15년\t20년\t25년\t30년'
+  ];
+  for(var i=0;i<SP.length;i++){
+    var row=SL[i];
+    for(var j=0;j<SY.length;j++){
+      var r=calcAll(SP[i],SY[j]);
+      row+='\t'+Math.round(r.total/10000).toLocaleString('ko-KR')+'만원(실효 '+r.eff.toFixed(2)+'%)';
+    }
+    L.push(row);
+  }
+  L.push('','='.repeat(54),'※ 본 계산은 참고용이며 세무전문가와 상담하세요.','※ 상담: https://blog.naver.com/semusatax');
+  var blob=new Blob([L.join('\n')],{type:'text/plain;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='@성셈_DC형퇴직소득세_'+new Date().toLocaleDateString('ko-KR').replace(/\./g,'').replace(/ /g,'')+'.txt';
+  a.click();URL.revokeObjectURL(a.href);
+}
+</script>
+</body>
+</html>
